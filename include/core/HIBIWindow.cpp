@@ -1,101 +1,101 @@
 #include <core/HIBIWindow.hpp>
-#include <tchar.h>
-#include <regex>
-#include <vector>
-#include <string>
-#include <iostream>
-#include <map>
+
 
 WCHAR windowClass[] = L"HIBIWindow";
 
-struct TaggedContent
+
+
+std::map<std::wstring, std::wstring> parseAttributes(const std::wstring& attrStr) {
+    std::map<std::wstring, std::wstring> attrs;
+    // Regex for: name="value" or name='value' or name=value
+    std::wregex attrRegex(L"(\\w+)\\s*=\\s*[\"']([^\"']*)[\"']");
+    auto attrs_begin = std::wsregex_iterator(attrStr.begin(), attrStr.end(), attrRegex);
+    auto attrs_end = std::wsregex_iterator();
+
+    for (auto i = attrs_begin; i != attrs_end; ++i) {
+        std::wsmatch match = *i;
+        attrs[match[1].str()] = match[2].str();
+    }
+    return attrs;
+}
+
+std::vector<TaggedContent> parseHtmlToTree(const std::wstring &html)
 {
-    std::wstring tag;
-    std::wstring content;
-    std::map<std::wstring, std::wstring> attributes;
-};
+    // A virtual "root" to hold the top-level elements
+    TaggedContent root;
+    root.tag = L"root";
 
-// Versione migliorata che gestisce anche tag self-closing
-std::vector<TaggedContent> splitByTags(const std::wstring &html)
-{
-    std::vector<TaggedContent> elements;
+    // Stack to track hierarchy. Points to the current parent.
+    std::stack<TaggedContent*> nodeStack;
+    nodeStack.push(&root);
 
-    // Regex migliorato che gestisce:
-    // 1. Tag con contenuto: <tag>content</tag>
-    // 2. Tag self-closing: <tag />
-    // 3. Tag vuoti: <br>, <meta>, <!doctype>
-    // 4. Testo normale
-    std::wregex tagRegex(
-        LR"(<!?(\w+)([^>]*)>(?:([\s\S]*?)<\/\1>)?|([^<]+))",
-        std::regex_constants::icase);
+    std::wregex tokenRegex(L"<(/?)(\\w+)([^>]*)>|([^<]+)");
 
-    auto begin = std::wsregex_iterator(html.begin(), html.end(), tagRegex);
+    auto begin = std::wsregex_iterator(html.begin(), html.end(), tokenRegex);
     auto end = std::wsregex_iterator();
 
     for (auto it = begin; it != end; ++it)
     {
         std::wsmatch match = *it;
-        TaggedContent tc;
 
-        if (match[1].matched)
+        if (match[2].matched) 
         {
-            // Tag HTML trovato
-            tc.tag = match[1].str();
+            std::wstring closingSlash = match[1].str();
+            std::wstring tagName = match[2].str();
+            std::wstring attrStr = match[3].str();
+            
+            bool isClosingTag = !closingSlash.empty();
+            bool isSelfClosing = (attrStr.find(L"/") != std::wstring::npos); // Check for <tag />
 
-            // Ignora tag che non vogliamo renderizzare
-            std::wstring tagLower = tc.tag;
-            std::transform(tagLower.begin(), tagLower.end(), tagLower.begin(), ::towlower);
+            // Normalize tag name
+            std::transform(tagName.begin(), tagName.end(), tagName.begin(), ::towlower);
 
-            if (tagLower == L"doctype" ||
-                tagLower == L"html" ||
-                tagLower == L"head" ||
-                tagLower == L"meta" ||
-                tagLower == L"title" ||
-                tagLower == L"style" ||
-                tagLower == L"script" ||
-                tagLower == L"body")
+            if (isClosingTag)
             {
-                // Skippa questi tag ma processa il loro contenuto
-                if (match[3].matched && !match[3].str().empty())
-                {
-                    // Processa ricorsivamente il contenuto
-                    auto innerElements = splitByTags(match[3].str());
-                    elements.insert(elements.end(), innerElements.begin(), innerElements.end());
+                if (nodeStack.size() > 1) {
+                    nodeStack.pop();
                 }
-                continue;
             }
-
-            // Contenuto del tag (se presente)
-            tc.content = match[3].matched ? match[3].str() : L"";
-            elements.push_back(tc);
-        }
-        else if (match[4].matched)
-        {
-            // Testo normale
-            std::wstring text = match[4].str();
-
-            // Rimuovi whitespace eccessivo
-            text = std::regex_replace(text, std::wregex(L"\\s+"), std::wstring(L" "));
-
-            // Trim
-            size_t start = text.find_first_not_of(L" \t\n\r");
-            size_t end = text.find_last_not_of(L" \t\n\r");
-
-            if (start != std::wstring::npos && end != std::wstring::npos)
+            else
             {
-                text = text.substr(start, end - start + 1);
+                // Found <tag>. Create new node.
+                TaggedContent newNode;
+                newNode.tag = tagName;
+                newNode.attributes = parseAttributes(attrStr);
 
-                if (!text.empty())
-                {
-                    tc.tag = L"text";
-                    tc.content = text;
-                    elements.push_back(tc);
+                // Add as child to the current top of stack
+                nodeStack.top()->children.push_back(newNode);
+                std::vector<std::wstring> voidTags = {L"img", L"br", L"hr", L"input", L"meta"};
+                bool isVoid = std::find(voidTags.begin(), voidTags.end(), tagName) != voidTags.end();
+
+                if (!isSelfClosing && !isVoid) {
+                    nodeStack.push(&nodeStack.top()->children.back());
+                }
+            }
+        }
+        else if (match[4].matched) 
+        {
+            std::wstring text = match[4].str();
+            
+            // Clean whitespace
+            text = std::regex_replace(text, std::wregex(L"\\s+"), std::wstring(L" "));
+            size_t first = text.find_first_not_of(L" ");
+            size_t last = text.find_last_not_of(L" ");
+
+            if (first != std::wstring::npos && last != std::wstring::npos) {
+                text = text.substr(first, (last - first + 1));
+                
+                if (!text.empty()) {
+                    TaggedContent textNode;
+                    textNode.tag = L"text";
+                    textNode.text = text;
+                    nodeStack.top()->children.push_back(textNode);
                 }
             }
         }
     }
 
-    return elements;
+    return root.children;
 }
 
 void HIBIWindow::SetContent(const std::string &rawHtml)
@@ -107,16 +107,130 @@ void HIBIWindow::SetContent(const std::string &rawHtml)
     MultiByteToWideChar(CP_UTF8, 0, &rawHtml[0], (int)rawHtml.size(), &wstrTo[0], size_needed);
     pageContent = wstrTo;
 }
+void HIBIWindow::DrawTreeRecursive(HDC hdc, const std::vector<TaggedContent>& elements, RECT rect, int& currentY)
+{
+    for (const auto& elem : elements)
+    {
+        if (elem.tag == L"title") 
+        {
+            if (!elem.text.empty()) {
+                SetWindowTextW(this->hwnd, elem.text.c_str());
+            } 
+            else if (!elem.children.empty() && !elem.children[0].text.empty()) {
+                SetWindowTextW(this->hwnd, elem.children[0].text.c_str());
+            }
+            continue; 
+        }
+
+        if (elem.tag == L"head") 
+        {
+            // FIX: Iterate over elem.children (the children of <head>), 
+            // NOT headChild.children.
+            for (const auto& headChild : elem.children) 
+            {
+                if (headChild.tag == L"title") 
+                {
+                    std::wstring titleText = headChild.text;
+                    if (titleText.empty() && !headChild.children.empty()) {
+                        titleText = headChild.children[0].text;
+                    }
+                    
+                    if (!titleText.empty()) {
+                        SetWindowTextW(this->hwnd, titleText.c_str());
+                    }
+                }
+            }
+            continue;
+        }
+
+        // Tags to completely ignore for drawing
+        //TODO: ADD STYLING, JAVASCRIPT SUPPORT AND META-DATA SUPPORT.
+        if (elem.tag == L"style" || elem.tag == L"script" || 
+            elem.tag == L"meta" || elem.tag == L"doctype" || elem.tag == L"link")
+            continue;
+
+        if (!elem.text.empty())
+        {
+            RECT textRect = rect;
+            textRect.top = currentY;
+            textRect.left += 20;
+            textRect.right -= 20;
+
+            HFONT hFont = nullptr;
+            COLORREF textColor = RGB(0, 0, 0);
+            
+            // Font Selection Logic
+            if (elem.tag == L"h1") {
+                hFont = CreateFontW(-24, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE,
+                                    DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+                                    CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI");
+            }
+            else if (elem.tag == L"a") {
+                hFont = CreateFontW(-16, 0, 0, 0, FW_NORMAL, FALSE, TRUE, FALSE,
+                                    DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+                                    CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI");
+                textColor = RGB(51, 68, 136);
+            }
+            else {
+                hFont = CreateFontW(-16, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
+                                    DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+                                    CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI");
+            }
+
+            HFONT hOldFont = (HFONT)SelectObject(hdc, hFont);
+            SetTextColor(hdc, textColor);
+
+            // Calculate and Draw
+            RECT calcRect = textRect;
+            DrawTextW(hdc, elem.text.c_str(), -1, &calcRect, DT_LEFT | DT_WORDBREAK | DT_CALCRECT);
+            DrawTextW(hdc, elem.text.c_str(), -1, &textRect, DT_LEFT | DT_WORDBREAK);
+
+            SelectObject(hdc, hOldFont);
+            DeleteObject(hFont);
+
+            currentY += (calcRect.bottom - calcRect.top) + 5; 
+        }
+
+        if (!elem.children.empty())
+        {
+            DrawTreeRecursive(hdc, elem.children, rect, currentY);
+        }
+    }
+}
+// Main Painting Function (Called by WM_PAINT)
+void HIBIWindow::PaintWindow(HIBIWindow* pWindow, const std::vector<TaggedContent>& elements)
+{
+    PAINTSTRUCT ps;
+    HDC hdc = BeginPaint(hwnd, &ps);
+
+    if (elements.empty()) {
+        EndPaint(hwnd, &ps);
+        return;
+    }
+
+
+    // Setup Background
+    RECT clientRect;
+    GetClientRect(hwnd, &clientRect);
+    SetBkMode(hdc, TRANSPARENT);
+    FillRect(hdc, &clientRect, (HBRUSH)GetStockObject(WHITE_BRUSH));
+
+    // Initialize Y Offset
+    int currentY = clientRect.top + 20;
+
+    // Start the recursive drawing using the prepared HDC
+    DrawTreeRecursive(hdc, elements, clientRect, currentY);
+
+    EndPaint(hwnd, &ps);
+}
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 
-    // 1. GET POINTER TO YOUR CLASS
     HIBIWindow *pWindow = reinterpret_cast<HIBIWindow *>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
 
     switch (uMsg)
     {
-    // 2. SETUP POINTER (Happens once when window is created)
     case WM_NCCREATE:
     {
         CREATESTRUCT *pCreate = reinterpret_cast<CREATESTRUCT *>(lParam);
@@ -125,87 +239,10 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         return DefWindowProc(hwnd, uMsg, wParam, lParam);
     }
 
-    // 3. PAINT THE TEXT
     case WM_PAINT:
     {
-        PAINTSTRUCT ps;
-        HDC hdc = BeginPaint(hwnd, &ps);
-
-        if (pWindow != nullptr && !pWindow->pageContent.empty())
-        {
-            RECT rect;
-            GetClientRect(hwnd, &rect);
-            SetBkMode(hdc, TRANSPARENT);
-
-            // Sfondo bianco
-            FillRect(hdc, &rect, (HBRUSH)GetStockObject(WHITE_BRUSH));
-
-            auto elements = splitByTags(pWindow->pageContent);
-
-            int yOffset = rect.top + 20;
-
-            for (const auto &elem : elements)
-            {
-                if (elem.content.empty())
-                    continue;
-
-                RECT textRect = rect;
-                textRect.top = yOffset;
-                textRect.left += 20;
-                textRect.right -= 20;
-
-                HFONT hFont = nullptr;
-
-                if (!(elem.tag == L"style") || !(elem.tag == L"script"))
-                {
-                    std::cout << "Current tag: ";
-                    std::cout << std::string(elem.tag.begin(), elem.tag.end()) << std::endl;
-                    if (elem.tag == L"h1")
-                    {
-                        hFont = CreateFontW(-24, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE,
-                                            DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-                                            CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI");
-                    }
-                    else if (elem.tag == L"p" || elem.tag == L"div")
-                    {
-                        hFont = CreateFontW(-16, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
-                                            DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-                                            CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI");
-                    }
-                    else if (elem.tag == L"a")
-                    {
-                        hFont = CreateFontW(-16, 0, 0, 0, FW_NORMAL, FALSE, TRUE, FALSE,
-                                            DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-                                            CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI");
-                        SetTextColor(hdc, RGB(51, 68, 136)); // Colore link
-                    }
-                    else
-                    {
-                        hFont = CreateFontW(-16, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
-                                            DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-                                            CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI");
-                    }
-
-                    HFONT hOldFont = (HFONT)SelectObject(hdc, hFont);
-
-                    DrawTextW(hdc, elem.content.c_str(),
-                              static_cast<int>(elem.content.length()),
-                              &textRect, DT_LEFT | DT_WORDBREAK | DT_CALCRECT);
-                    DrawTextW(hdc, elem.content.c_str(),
-                              static_cast<int>(elem.content.length()),
-                              &textRect, DT_LEFT | DT_WORDBREAK);
-
-                    SelectObject(hdc, hOldFont);
-                    DeleteObject(hFont);
-
-                    // Reset colore per il prossimo elemento
-                    SetTextColor(hdc, RGB(0, 0, 0));
-
-                    yOffset = textRect.bottom + 10;
-                }
-            }
-        }
-        EndPaint(hwnd, &ps);
+        auto elements = parseHtmlToTree(pWindow->pageContent);
+        pWindow->PaintWindow(pWindow, elements);
         return 0;
     }
 
