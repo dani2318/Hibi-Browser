@@ -1,0 +1,5 @@
+-Iinclude
+-D_DEBUG
+-DUNICODE
+-D_UNICODE
+-std=c++23
