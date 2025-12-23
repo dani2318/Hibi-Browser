@@ -9,31 +9,26 @@ class HTMLElement
 {
 public:
     HTMLElement(
-        std::string tag,
-        std::map<std::string, std::string> attr,
+        std::wstring tag,
+        std::map<std::wstring, std::wstring> attr,
         std::vector<HTMLElement> childs,
-        std::string content = ""
-    ) : tag(tag), attributes(attr), children(childs), content(content){
-        
-        std::string pattern = "<" + tag + R"([^>]*>([\s\S]*?)<\/)" + tag + ">";
-        regex = std::regex(pattern, std::regex::icase);
+        std::wstring content = L"") : tag(tag), attributes(attr), children(childs), content(content) {};
 
-    };
-
-    std::regex GetRegex() const { return regex; };
-    std::string GetTag() const { return tag; };
-    HTMLElement* GetChildren(int index) { 
-        if (index >= 0 && index < children.size()) {
-            return &children[index]; 
+    std::wstring GetTag() const { return tag; };
+    HTMLElement *GetChildren(int index)
+    {
+        if (index >= 0 && index < children.size())
+        {
+            return &children[index];
         }
-        return nullptr; // Safety check
+        return nullptr;
     }
-    std::string GetContent() const { return content; };
+    std::wstring GetContent() const { return content; };
+
+    std::vector<HTMLElement> children;
 
 private:
-    std::regex regex;
-    std::string tag;
-    std::map<std::string, std::string> attributes;
-    std::vector<HTMLElement> children;
-    std::string content;
+    std::wstring tag;
+    std::map<std::wstring, std::wstring> attributes;
+    std::wstring content;
 };

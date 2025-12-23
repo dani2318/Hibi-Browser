@@ -1,33 +1,23 @@
 #pragma once
 #include <windows.h>
 #include <iostream>
-#include <string>
-#include <vector>
 #include <core/HIBIWindow.hpp>
-#include <core/parser/HTMLParser.hpp>
+#include <html/HTMLElement.hpp>
 
-class HIRender{
+class HIRender
+{
 
-    public:
-        HIRender(std::wstring html, HTMLParser* htmlParser) : html_(html), htmlParser(htmlParser){};
+public:
+    HIRender() {};
 
-        static bool Render(PAINTSTRUCT ps, HDC hdc, HIBIWindow *pWindow, HWND hwnd){
-            if(pWindow == nullptr || pWindow->pageContent.empty()) return false;
+    void DrawTreeRecursive(HDC hdc, const std::vector<HTMLElement> &elements,
+                           RECT rect, int &currentY);
 
-            RECT rect;
-            GetClientRect(hwnd, &rect);
+private:
+    HFONT ElabFont(int cHeight, int cWeight, DWORD bItalic,
+                   DWORD bUnderline, DWORD bStrikeOut,
+                   DWORD iQuality, DWORD iPitchAndFamily, LPCWSTR pszFaceName);
 
-            FillRect(hdc, &rect, (HBRUSH)GetStockObject(WHITE_BRUSH));
-
-            int yOffset = rect.top + 20;
-
-
-            EndPaint(hwnd, &ps);
-            return true;
-        }
-
-    private:
-        std::wstring html_;
-        HTMLParser* htmlParser;
-
+    const std::wstring DEFAULT_FONT = L"Segoe UI";
+    const std::wstring DEFAULT_CODE_FONT = L"Consolas";
 };

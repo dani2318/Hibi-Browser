@@ -3,18 +3,16 @@
 #include <map>
 #include <vector>
 #include <iostream>
-
-
-struct HTMLElement {
-    std::string tag;
-    std::map<std::string, std::string> attributes;
-    std::vector <HTMLElement> children;
-};
+#include <regex>
+#include <map>
+#include <html/HTMLElement.hpp>
+#include <stack>
 
 class HTMLParser {
     public:
-        HTMLParser(const std::string &html) : html_(html), index_(0) {};
+        HTMLParser(std::wstring* html) : html_(html) {};
+        std::vector<HTMLElement> parseHtmlToTree(const std::wstring &html);
     private:
-        const std::string& html_;
-        const int index_;
+        std::wstring* html_;
+        std::map<std::wstring, std::wstring> parseAttributes(const std::wstring &attrStr);
 };

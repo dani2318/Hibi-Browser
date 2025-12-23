@@ -4,12 +4,17 @@
 #include <fcntl.h> 
 #include <io.h>
 
-int WINAPI wWinMain(HINSTANCE hInst, HINSTANCE hPrevInst, PWSTR pCmdLine, int nCmdShow) {
+void SetupConsole(){
     AllocConsole();
     _setmode(_fileno(stdout), _O_U16TEXT);
     FILE* fp; 
     freopen_s(&fp, "CONOUT$", "w", stdout);
     freopen_s(&fp, "CONOUT$", "w", stderr);
+}
+
+int WINAPI wWinMain(HINSTANCE hInst, HINSTANCE hPrevInst, PWSTR pCmdLine, int nCmdShow) {
+
+    SetupConsole();
 
     std::wcout << "[DEBUG] Console Attached." << std::endl;
 
@@ -22,18 +27,20 @@ int WINAPI wWinMain(HINSTANCE hInst, HINSTANCE hPrevInst, PWSTR pCmdLine, int nC
         std::wcout << "[DEBUG] " << html.c_str() << std::endl;
     } else {
         std::wcout << "[ERROR] Fetch returned empty string." << std::endl;
+        exit(-1);
     }
 
-    // 4. Create Window (Stack allocation is safer here)
-    HIBIWindow app(
-        { 1280, 720, "HIBI Browser" },
+    WindowParams params("HIBI Browser", 1280, 720);
+
+    HIBIWindow* app = new HIBIWindow(
+        params,
         hInst,
         hPrevInst,
         pCmdLine,
         nCmdShow
     );
 
-    app.SetContent(html);
+    app->SetContent(html);
 
-    return app.run();
+    return app->run();
 }
