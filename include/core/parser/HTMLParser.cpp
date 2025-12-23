@@ -1,7 +1,7 @@
 #include <core/parser/HTMLParser.hpp>
 #include <algorithm>
 #include <cctype>
-#include <html/p.hpp>
+#include <html/HTMLElement.hpp>
 
 std::map<std::wstring, std::wstring> HTMLParser::parseAttributes(const std::wstring &attrStr)
 {
@@ -48,17 +48,17 @@ std::map<std::wstring, std::wstring> HTMLParser::parseAttributes(const std::wstr
     return attrs;
 }
 
-std::vector<HTMLElement> HTMLParser::parseHtmlToTree(const std::wstring &html)
+std::vector<std::shared_ptr<HTMLElement>> HTMLParser::parseHtmlToTree(const std::wstring &html)
 {
     if (html.empty())
     {
-        return std::vector<HTMLElement>();
+        return std::vector<std::shared_ptr<HTMLElement>>();
     }
 
     try
     {
         HTMLElement root(L"root", std::map<std::wstring, std::wstring>(),
-                         std::vector<HTMLElement>());
+                         std::vector<std::shared_ptr<HTMLElement>>());
 
         std::stack<HTMLElement *> nodeStack;
         nodeStack.push(&root);
@@ -101,31 +101,46 @@ std::vector<HTMLElement> HTMLParser::parseHtmlToTree(const std::wstring &html)
 
                     if (tagName == L"p")
                     {
-                        P pNode(tagName, attrs, std::vector<HTMLElement>());
+                        HTMLParagraph pNode(tagName, attrs, std::vector<std::shared_ptr<HTMLElement>>());
+                        std::wcout << "Using HTMLParagraph instead of HTMLElement"<< std::endl;
 
                         if (!nodeStack.empty())
                         {
-                            nodeStack.top()->children.push_back(pNode);
+                            nodeStack.top()->children.push_back(std::make_shared<HTMLParagraph>(pNode));
 
                             bool isVoid = std::find(voidTags.begin(), voidTags.end(), tagName) != voidTags.end();
 
                             if (!isSelfClosing && !isVoid && nodeStack.size() < 100)
-                                nodeStack.push(&nodeStack.top()->children.back());
+                                nodeStack.push(nodeStack.top()->children.back().get());
                         }
 
                     }
-                    else
-                    {
-                        HTMLElement newNode(tagName, attrs, std::vector<HTMLElement>());
+                    else if (tagName == L"div"){
+                        HTMLDiv pNode(tagName, attrs, std::vector<std::shared_ptr<HTMLElement>>());
+                        std::wcout << "Using HTMLDiv instead of HTMLElement"<< std::endl;
 
                         if (!nodeStack.empty())
                         {
-                            nodeStack.top()->children.push_back(newNode);
+                            nodeStack.top()->children.push_back(std::make_shared<HTMLDiv>(pNode));
 
                             bool isVoid = std::find(voidTags.begin(), voidTags.end(), tagName) != voidTags.end();
 
                             if (!isSelfClosing && !isVoid && nodeStack.size() < 100)
-                                nodeStack.push(&nodeStack.top()->children.back());
+                                nodeStack.push(nodeStack.top()->children.back().get());
+                        }
+                    }
+                    else
+                    {
+                        HTMLElement newNode(tagName, attrs, std::vector<std::shared_ptr<HTMLElement>>());
+
+                        if (!nodeStack.empty())
+                        {
+                            nodeStack.top()->children.push_back(std::make_shared<HTMLElement>(newNode));
+
+                            bool isVoid = std::find(voidTags.begin(), voidTags.end(), tagName) != voidTags.end();
+
+                            if (!isSelfClosing && !isVoid && nodeStack.size() < 100)
+                                nodeStack.push(nodeStack.top()->children.back().get());
                         }
                     }
                 }
@@ -152,9 +167,9 @@ std::vector<HTMLElement> HTMLParser::parseHtmlToTree(const std::wstring &html)
                     {
                         HTMLElement textNode(std::wstring(L"text"),
                                              std::map<std::wstring, std::wstring>(),
-                                             std::vector<HTMLElement>(),
+                                             std::vector<std::shared_ptr<HTMLElement>>(),
                                              text);
-                        nodeStack.top()->children.push_back(textNode);
+                        nodeStack.top()->children.push_back(std::make_shared<HTMLElement>(textNode));
                     }
                 }
             }
@@ -165,6 +180,6 @@ std::vector<HTMLElement> HTMLParser::parseHtmlToTree(const std::wstring &html)
     catch (const std::exception &e)
     {
         std::wcerr << L"Error in parseHtmlToTree: " << e.what() << std::endl;
-        return std::vector<HTMLElement>();
+        return std::vector<std::shared_ptr<HTMLElement>>();
     }
 }

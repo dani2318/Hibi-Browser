@@ -33,11 +33,11 @@ private:
     
     HTMLParser* htmlParser;
     
-    std::vector<HTMLElement> cachedElements;
+    std::vector<std::shared_ptr<HTMLElement>> cachedElements;
 
     void DrawTreeRecursive(HDC hdc, const std::vector<HTMLElement> &elements, 
                           RECT rect, int &currentY);
-    void PaintWindow(HIBIWindow *pWindow, const std::vector<HTMLElement> &elements);
+    void PaintWindow(HIBIWindow *pWindow, const std::vector<std::shared_ptr<HTMLElement>> &elements);
 
 public:
     explicit HIBIWindow(WindowParams p, HINSTANCE hInst, HINSTANCE hPrevInst, 

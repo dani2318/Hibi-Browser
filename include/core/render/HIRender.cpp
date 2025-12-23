@@ -1,4 +1,5 @@
 #include <core/render/HIRender.hpp>
+#include <html/HTMLElement.hpp> 
 
 HFONT HIRender::ElabFont(int cHeight, int cWeight, DWORD bItalic,
                          DWORD bUnderline, DWORD bStrikeOut,
@@ -9,9 +10,10 @@ HFONT HIRender::ElabFont(int cHeight, int cWeight, DWORD bItalic,
                        iQuality, iPitchAndFamily, pszFaceName);
 }
 
-void HIRender::DrawTreeRecursive(HDC hdc, const std::vector<HTMLElement> &elements,
+void HIRender::DrawTreeRecursive(HDC hdc, const std::vector<std::shared_ptr<HTMLElement>> &elements,
                                  RECT rect, int &currentY)
 {
+    
     static int recursionDepth = 0;
     if (recursionDepth > 100)
     {
@@ -23,14 +25,13 @@ void HIRender::DrawTreeRecursive(HDC hdc, const std::vector<HTMLElement> &elemen
     for (const auto &elem : elements)
     {
 
-        std::wcout << "Formatting DOM element of type: " << elem.GetTag() << std::endl;
-        if (elem.GetTag() == L"style" || elem.GetTag() == L"doctype")
-        {
-            std::wcout << "Found: " << elem.GetTag() << std::endl;
-            continue;
-        }
+        if(!elem) continue;
 
-        if (!elem.GetContent().empty())
+        std::wcout << "Formatting DOM element of type: " << elem.get()->GetTag() << L" " << typeid(elem).name() << std::endl;
+        if (elem->GetTag() == L"style" || elem->GetTag() == L"doctype")
+            continue;
+
+        if (!elem->GetContent().empty())
         {
             RECT textRect = rect;
             textRect.top = currentY;
@@ -38,52 +39,57 @@ void HIRender::DrawTreeRecursive(HDC hdc, const std::vector<HTMLElement> &elemen
             textRect.right -= 20;
 
             if (textRect.right <= textRect.left || textRect.bottom <= textRect.top)
-            {
                 continue;
-            }
 
             HFONT hFont = ElabFont(-16, FW_NORMAL, FALSE, FALSE, FALSE,
                                    CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, DEFAULT_FONT.c_str());
             COLORREF textColor = RGB(0, 0, 0);
 
-            if (elem.GetTag() == L"h1")
+            if (elem->GetTag() == L"h1" || elem->GetTag() == L"h2" || elem->GetTag() == L"h3" || elem->GetTag() == L"p")
             {
-                hFont = ElabFont(-32, FW_BOLD, FALSE, FALSE, FALSE,
-                                 CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, DEFAULT_FONT.c_str());
+                auto telem = std::dynamic_pointer_cast<HTMLTextElement>(elem);
+
+                if (elem->GetTag() == L"h1")
+                {
+                    telem = std::dynamic_pointer_cast<HTMLH1>(elem);
+                }else if (elem->GetTag() == L"h2")
+                {
+                    telem = std::dynamic_pointer_cast<HTMLH2>(elem);
+                }else if (elem->GetTag() == L"h3")
+                {
+                    telem = std::dynamic_pointer_cast<HTMLH3>(elem);
+                }else if (elem->GetTag() == L"p")
+                {
+                    telem = std::dynamic_pointer_cast<HTMLParagraph>(elem);
+                }
+                std::wcout << "Formatting DOM element: " << typeid(elem.get()).name() << L" to " << typeid(telem.get()).name() << std::endl;
+
+                if (telem)
+                    hFont = telem->Font();
             }
-            else if (elem.GetTag() == L"h2")
-            {
-                hFont = ElabFont(-24, FW_BOLD, FALSE, FALSE, FALSE,
-                                 CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, DEFAULT_FONT.c_str());
-            }
-            else if (elem.GetTag() == L"h3")
-            {
-                hFont = ElabFont(-20, FW_SEMIBOLD, FALSE, FALSE, FALSE,
-                                 CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, DEFAULT_FONT.c_str());
-            }
-            else if (elem.GetTag() == L"a")
+            else if (elem->GetTag() == L"a")
             {
                 hFont = ElabFont(-16, FW_NORMAL, FALSE, TRUE, FALSE,
                                  CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, DEFAULT_FONT.c_str());
                 textColor = RGB(0, 102, 204);
             }
-            else if (elem.GetTag() == L"strong" || elem.GetTag() == L"b")
+            else if (elem->GetTag() == L"strong" || elem->GetTag() == L"b")
             {
                 hFont = ElabFont(-16, FW_BOLD, FALSE, FALSE, FALSE,
                                  CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, DEFAULT_FONT.c_str());
             }
-            else if (elem.GetTag() == L"em" || elem.GetTag() == L"i")
+            else if (elem->GetTag() == L"em" || elem->GetTag() == L"i")
             {
                 hFont = ElabFont(-16, FW_NORMAL, TRUE, FALSE, FALSE,
                                  CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, DEFAULT_FONT.c_str());
             }
-            else if (elem.GetTag() == L"code")
+            else if (elem->GetTag() == L"code")
             {
                 hFont = ElabFont(-14, FW_NORMAL, FALSE, FALSE, FALSE,
                                  CLEARTYPE_QUALITY, FIXED_PITCH | FF_MODERN, DEFAULT_FONT.c_str());
                 textColor = RGB(139, 0, 0);
             }
-            else if (elem.GetTag() == L"text")
+            else if (elem->GetTag() == L"text")
             {
                 hFont = ElabFont(-16, FW_NORMAL, FALSE, FALSE, FALSE,
                                  CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, DEFAULT_FONT.c_str());
@@ -95,12 +101,12 @@ void HIRender::DrawTreeRecursive(HDC hdc, const std::vector<HTMLElement> &elemen
                 SetTextColor(hdc, textColor);
 
                 RECT calcRect = textRect;
-                int height = DrawTextW(hdc, elem.GetContent().c_str(), -1, &calcRect,
+                int height = DrawTextW(hdc, elem->GetContent().c_str(), -1, &calcRect,
                                        DT_LEFT | DT_WORDBREAK | DT_CALCRECT);
 
                 if (height > 0)
                 {
-                    DrawTextW(hdc, elem.GetContent().c_str(), -1, &textRect,
+                    DrawTextW(hdc, elem->GetContent().c_str(), -1, &textRect,
                               DT_LEFT | DT_WORDBREAK);
                     currentY += (calcRect.bottom - calcRect.top) + 5;
                 }
@@ -108,16 +114,16 @@ void HIRender::DrawTreeRecursive(HDC hdc, const std::vector<HTMLElement> &elemen
                 SelectObject(hdc, hOldFont);
                 DeleteObject(hFont);
 
-                if (elem.GetTag().find(L"h") == 0 && elem.GetTag().length() == 2)
+                if (elem->GetTag().find(L"h") == 0 && elem->GetTag().length() == 2)
                 {
                     currentY += 10;
                 }
             }
         }
 
-        if (!elem.children.empty())
+        if (!elem->children.empty())
         {
-            DrawTreeRecursive(hdc, elem.children, rect, currentY);
+            DrawTreeRecursive(hdc, elem->children, rect, currentY);
         }
     }
 

@@ -1,5 +1,7 @@
 #include <core/HIBIWindow.hpp>
 #include <core/render/HIRender.hpp>
+#include <core/parser/HTMLParser.hpp>
+#include <html/HTMLElement.hpp>
 #include <tchar.h>
 
 WCHAR windowClass[] = L"HIBIWindow";
@@ -37,7 +39,7 @@ void HIBIWindow::SetContent(const std::string &rawHtml)
 }
 
 
-void HIBIWindow::PaintWindow(HIBIWindow *pWindow, const std::vector<HTMLElement> &elements)
+void HIBIWindow::PaintWindow(HIBIWindow *pWindow, const std::vector<std::shared_ptr<HTMLElement>> &elements)
 {
     PAINTSTRUCT ps;
     HDC hdc = BeginPaint(hwnd, &ps);
@@ -51,7 +53,12 @@ void HIBIWindow::PaintWindow(HIBIWindow *pWindow, const std::vector<HTMLElement>
     {
         int currentY = clientRect.top + 20;
 
-        PageRenderer->DrawTreeRecursive(hdc, elements, clientRect, currentY);
+        std::vector<std::shared_ptr<HTMLElement>> sharedElements;
+        for (const auto &element : elements)
+        {
+            sharedElements.push_back(element);
+        }
+        PageRenderer->DrawTreeRecursive(hdc, sharedElements, clientRect, currentY);
     }
 
     EndPaint(hwnd, &ps);
