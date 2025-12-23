@@ -4,6 +4,7 @@
 #include <vector>
 #include <iostream>
 #include <regex>
+#include <core/render/HIRender.hpp>
 
 class HTMLElement
 {
@@ -26,6 +27,10 @@ public:
     std::wstring GetContent() const { return content; };
 
     std::vector<HTMLElement> children;
+    virtual HFONT Font(){
+        return HIRender::ElabFont(-16, FW_NORMAL, FALSE, FALSE, FALSE,
+                                   CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, DEFAULT_FONT.c_str());
+    };
 
 private:
     std::wstring tag;

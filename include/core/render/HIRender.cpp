@@ -1,8 +1,8 @@
 #include <core/render/HIRender.hpp>
 
 HFONT HIRender::ElabFont(int cHeight, int cWeight, DWORD bItalic,
-               DWORD bUnderline, DWORD bStrikeOut,
-               DWORD iQuality, DWORD iPitchAndFamily, LPCWSTR pszFaceName)
+                         DWORD bUnderline, DWORD bStrikeOut,
+                         DWORD iQuality, DWORD iPitchAndFamily, LPCWSTR pszFaceName)
 {
     return CreateFontW(cHeight, 0, 0, 0, cWeight, bItalic, bUnderline, bStrikeOut,
                        DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
@@ -42,60 +42,51 @@ void HIRender::DrawTreeRecursive(HDC hdc, const std::vector<HTMLElement> &elemen
                 continue;
             }
 
-            HFONT hFont = CreateFontW(-16, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
-                                      DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-                                      CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, DEFAULT_FONT.c_str());
+            HFONT hFont = ElabFont(-16, FW_NORMAL, FALSE, FALSE, FALSE,
+                                   CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, DEFAULT_FONT.c_str());
             COLORREF textColor = RGB(0, 0, 0);
 
             if (elem.GetTag() == L"h1")
             {
-                hFont = CreateFontW(-32, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE,
-                                    DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-                                    CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, DEFAULT_FONT.c_str());
+                hFont = ElabFont(-32, FW_BOLD, FALSE, FALSE, FALSE,
+                                 CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, DEFAULT_FONT.c_str());
             }
             else if (elem.GetTag() == L"h2")
             {
-                hFont = CreateFontW(-24, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE,
-                                    DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-                                    CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, DEFAULT_FONT.c_str());
+                hFont = ElabFont(-24, FW_BOLD, FALSE, FALSE, FALSE,
+                                 CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, DEFAULT_FONT.c_str());
             }
             else if (elem.GetTag() == L"h3")
             {
-                hFont = CreateFontW(-20, 0, 0, 0, FW_SEMIBOLD, FALSE, FALSE, FALSE,
-                                    DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-                                    CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, DEFAULT_FONT.c_str());
+                hFont = ElabFont(-20, FW_SEMIBOLD, FALSE, FALSE, FALSE,
+                                 CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, DEFAULT_FONT.c_str());
             }
             else if (elem.GetTag() == L"a")
             {
-                hFont = CreateFontW(-16, 0, 0, 0, FW_NORMAL, FALSE, TRUE, FALSE,
-                                    DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-                                    CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, DEFAULT_FONT.c_str());
+                hFont = ElabFont(-16, FW_NORMAL, FALSE, TRUE, FALSE,
+                                 CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, DEFAULT_FONT.c_str());
                 textColor = RGB(0, 102, 204);
             }
             else if (elem.GetTag() == L"strong" || elem.GetTag() == L"b")
             {
-                hFont = CreateFontW(-16, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE,
-                                    DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-                                    CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, DEFAULT_FONT.c_str());
+                hFont = ElabFont(-16, FW_BOLD, FALSE, FALSE, FALSE,
+                                 CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, DEFAULT_FONT.c_str());
             }
             else if (elem.GetTag() == L"em" || elem.GetTag() == L"i")
             {
-                hFont = CreateFontW(-16, 0, 0, 0, FW_NORMAL, TRUE, FALSE, FALSE,
-                                    DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-                                    CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, DEFAULT_FONT.c_str());
+                hFont = ElabFont(-16, FW_NORMAL, TRUE, FALSE, FALSE,
+                                 CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, DEFAULT_FONT.c_str());
             }
             else if (elem.GetTag() == L"code")
             {
-                hFont = CreateFontW(-14, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
-                                    DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-                                    CLEARTYPE_QUALITY, FIXED_PITCH | FF_MODERN, DEFAULT_CODE_FONT.c_str());
+                hFont = ElabFont(-14, FW_NORMAL, FALSE, FALSE, FALSE,
+                                 CLEARTYPE_QUALITY, FIXED_PITCH | FF_MODERN, DEFAULT_FONT.c_str());
                 textColor = RGB(139, 0, 0);
             }
             else if (elem.GetTag() == L"text")
             {
-                hFont = CreateFontW(-16, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
-                                    DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-                                    CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, DEFAULT_FONT.c_str());
+                hFont = ElabFont(-16, FW_NORMAL, FALSE, FALSE, FALSE,
+                                 CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, DEFAULT_FONT.c_str());
             }
 
             if (hFont)
