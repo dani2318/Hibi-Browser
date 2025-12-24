@@ -1,5 +1,9 @@
 #include <core/render/HIRender.hpp>
-#include <html/HTMLElement.hpp> 
+#include <html/HTMLElement.hpp>
+#include <html/HTMLTextElement.hpp>
+#include <html/HTMLHeaders.hpp>
+#include <html/HTMLParagraph.hpp>
+#include <tchar.h>
 
 HFONT HIRender::ElabFont(int cHeight, int cWeight, DWORD bItalic,
                          DWORD bUnderline, DWORD bStrikeOut,
@@ -10,10 +14,88 @@ HFONT HIRender::ElabFont(int cHeight, int cWeight, DWORD bItalic,
                        iQuality, iPitchAndFamily, pszFaceName);
 }
 
+COLORREF textColor = RGB(0, 0, 0);
+
+HFONT HIRender::GetFontFamily(const auto &elem)
+{
+    int cHeight = -16;
+    int cWeight = FW_NORMAL;
+
+    DWORD bItalic = FALSE;
+    DWORD bUnderline = FALSE;
+    DWORD bStrikeOut = FALSE;
+
+    DWORD iQuality = CLEARTYPE_QUALITY;
+    DWORD iPitchAndFamily = DEFAULT_PITCH | FF_DONTCARE;
+    LPCWSTR pszFaceName = DEFAULT_FONT.c_str();
+
+    HFONT hFont = ElabFont(-16, FW_NORMAL, FALSE, FALSE, FALSE,
+                           CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, DEFAULT_FONT.c_str());
+
+    // Handle elements that manage their own Font object (H1, H2, H3, P)
+    if (auto telem = std::dynamic_pointer_cast<HTMLTextElement>(elem))
+    {
+        return telem->Font();
+    }
+
+    // Set Default Values (Applied to 'text', 'a', etc.)
+    cHeight    = -16;
+    cWeight    = FW_NORMAL;
+    bItalic    = FALSE;
+    bUnderline = FALSE;
+    bStrikeOut = FALSE;
+    iQuality   = CLEARTYPE_QUALITY;
+    iPitchAndFamily = DEFAULT_PITCH | FF_DONTCARE;
+
+    // Apply Specific Overrides based on Tag
+    const std::wstring& tag = elem->GetTag();
+
+    if (tag == L"a")
+    {
+        bUnderline = TRUE;
+        textColor  = RGB(0, 102, 204);
+    }
+    else if (tag == L"strong" || tag == L"b")
+    {
+        cWeight    = FW_BOLD;
+        textColor  = RGB(0, 102, 204);
+    }
+    else if (tag == L"em" || tag == L"i")
+    {
+        bItalic    = TRUE;
+        textColor  = RGB(0, 102, 204);
+    }
+    else if (tag == L"code")
+    {
+        cHeight         = -14;
+        bItalic         = TRUE;
+        iPitchAndFamily = FIXED_PITCH | FF_MODERN;
+        pszFaceName     = DEFAULT_CODE_FONT.c_str();
+        textColor       = RGB(139, 0, 0);
+    }
+
+    return ElabFont(cHeight, cWeight, bItalic,
+                         bUnderline, bStrikeOut,
+                         iQuality, iPitchAndFamily, pszFaceName);
+}
+
+void GetFontFaceName(HFONT hFont) {
+    HDC hdc = GetDC(NULL);
+    HGDIOBJ hOldFont = SelectObject(hdc, hFont);
+
+    TCHAR faceName[LF_FACESIZE];
+    if (GetTextFace(hdc, LF_FACESIZE, faceName) > 0) {
+        _tprintf(_T("\t>>> Font Name: %s\n"), faceName);
+    }
+
+    SelectObject(hdc, hOldFont);
+    ReleaseDC(NULL, hdc);
+}
+
 void HIRender::DrawTreeRecursive(HDC hdc, const std::vector<std::shared_ptr<HTMLElement>> &elements,
                                  RECT rect, int &currentY)
 {
-    
+
     static int recursionDepth = 0;
     if (recursionDepth > 100)
     {
@@ -25,7 +107,8 @@ void HIRender::DrawTreeRecursive(HDC hdc, const std::vector<std::shared_ptr<HTML
     for (const auto &elem : elements)
     {
 
-        if(!elem) continue;
+        if (!elem)
+            continue;
 
         std::wcout << "Formatting DOM element of type: " << elem.get()->GetTag() << L" " << typeid(elem).name() << std::endl;
         if (elem->GetTag() == L"style" || elem->GetTag() == L"doctype")
@@ -41,59 +124,7 @@ void HIRender::DrawTreeRecursive(HDC hdc, const std::vector<std::shared_ptr<HTML
             if (textRect.right <= textRect.left || textRect.bottom <= textRect.top)
                 continue;
 
-            HFONT hFont = ElabFont(-16, FW_NORMAL, FALSE, FALSE, FALSE,
-                                   CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, DEFAULT_FONT.c_str());
-            COLORREF textColor = RGB(0, 0, 0);
-
-            if (elem->GetTag() == L"h1" || elem->GetTag() == L"h2" || elem->GetTag() == L"h3" || elem->GetTag() == L"p")
-            {
-                auto telem = std::dynamic_pointer_cast<HTMLTextElement>(elem);
-
-                if (elem->GetTag() == L"h1")
-                {
-                    telem = std::dynamic_pointer_cast<HTMLH1>(elem);
-                }else if (elem->GetTag() == L"h2")
-                {
-                    telem = std::dynamic_pointer_cast<HTMLH2>(elem);
-                }else if (elem->GetTag() == L"h3")
-                {
-                    telem = std::dynamic_pointer_cast<HTMLH3>(elem);
-                }else if (elem->GetTag() == L"p")
-                {
-                    telem = std::dynamic_pointer_cast<HTMLParagraph>(elem);
-                }
-                std::wcout << "Formatting DOM element: " << typeid(elem.get()).name() << L" to " << typeid(telem.get()).name() << std::endl;
-
-                if (telem)
-                    hFont = telem->Font();
-            }
-            else if (elem->GetTag() == L"a")
-            {
-                hFont = ElabFont(-16, FW_NORMAL, FALSE, TRUE, FALSE,
-                                 CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, DEFAULT_FONT.c_str());
-                textColor = RGB(0, 102, 204);
-            }
-            else if (elem->GetTag() == L"strong" || elem->GetTag() == L"b")
-            {
-                hFont = ElabFont(-16, FW_BOLD, FALSE, FALSE, FALSE,
-                                 CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, DEFAULT_FONT.c_str());
-            }
-            else if (elem->GetTag() == L"em" || elem->GetTag() == L"i")
-            {
-                hFont = ElabFont(-16, FW_NORMAL, TRUE, FALSE, FALSE,
-                                 CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, DEFAULT_FONT.c_str());
-            }
-            else if (elem->GetTag() == L"code")
-            {
-                hFont = ElabFont(-14, FW_NORMAL, FALSE, FALSE, FALSE,
-                                 CLEARTYPE_QUALITY, FIXED_PITCH | FF_MODERN, DEFAULT_FONT.c_str());
-                textColor = RGB(139, 0, 0);
-            }
-            else if (elem->GetTag() == L"text")
-            {
-                hFont = ElabFont(-16, FW_NORMAL, FALSE, FALSE, FALSE,
-                                 CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, DEFAULT_FONT.c_str());
-            }
+            HFONT hFont = GetFontFamily(elem);
 
             if (hFont)
             {
@@ -119,6 +150,12 @@ void HIRender::DrawTreeRecursive(HDC hdc, const std::vector<std::shared_ptr<HTML
                     currentY += 10;
                 }
             }
+
+            std::wcout << "\t>>> Using Font color: R: " << GetRValue(textColor) << " G: " << GetGValue(textColor) << " B: "<< GetBValue(textColor) << std::endl;
+            GetFontFaceName(hFont);
+            
+
+            textColor = RGB(0, 0, 0);
         }
 
         if (!elem->children.empty())

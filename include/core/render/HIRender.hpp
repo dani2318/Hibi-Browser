@@ -19,7 +19,8 @@ public:
     static HFONT ElabFont(int cHeight, int cWeight, DWORD bItalic,
                     DWORD bUnderline, DWORD bStrikeOut,
                     DWORD iQuality, DWORD iPitchAndFamily, LPCWSTR pszFaceName);
-    
+
 private:
+    HFONT HIRender::GetFontFamily(const auto &elem);
 
 };
