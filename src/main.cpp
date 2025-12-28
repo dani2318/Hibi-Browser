@@ -12,6 +12,8 @@ void SetupConsole(){
     freopen_s(&fp, "CONOUT$", "w", stderr);
 }
 
+#define _DEBUG
+
 int WINAPI wWinMain(HINSTANCE hInst, HINSTANCE hPrevInst, PWSTR pCmdLine, int nCmdShow) {
 
     #ifdef _DEBUG

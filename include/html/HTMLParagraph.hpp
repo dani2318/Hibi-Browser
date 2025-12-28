@@ -5,9 +5,8 @@
 
 
 #include <html/HTMLTextElement.hpp> 
-#include <fonts/IFontProvider.hpp>
 
-class HTMLParagraph : public HTMLTextElement, public IFontProvider
+class HTMLParagraph : public HTMLTextElement
 {
 public:
     HTMLParagraph(
@@ -19,7 +18,6 @@ public:
     
     HFONT Font() const override
     {
-        // Standard paragraph font
         return HIRender::ElabFont(-16, FW_NORMAL, FALSE, FALSE, FALSE,
                                    CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE,
                                    DEFAULT_FONT.c_str());

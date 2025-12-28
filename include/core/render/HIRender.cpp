@@ -18,13 +18,11 @@ HFONT HIRender::ElabFont(int cHeight, int cWeight, DWORD bItalic,
 COLORREF textColor = RGB(0, 0, 0);
 HFONT HIRender::GetFontFamily(const auto &elem)
 {
-    // 1. Priority check: Does the element manage its own font? (H1, H2, H3, P)
     if (auto telem = std::dynamic_pointer_cast<IFontProvider>(elem))
     {
         return telem->Font();
     }
 
-    // 2. Default Values for inline/simple elements (text, a, b, etc.)
     int cHeight = -16;
     int cWeight = FW_NORMAL;
     DWORD bItalic = FALSE;
@@ -34,7 +32,6 @@ HFONT HIRender::GetFontFamily(const auto &elem)
     DWORD iPitchAndFamily = DEFAULT_PITCH | FF_DONTCARE;
     LPCWSTR pszFaceName = DEFAULT_FONT.c_str();
 
-    // 3. Apply Tag-specific Overrides
     const std::wstring &tag = elem->GetTag();
 
     if (tag == L"a")
@@ -57,7 +54,6 @@ HFONT HIRender::GetFontFamily(const auto &elem)
         pszFaceName = DEFAULT_CODE_FONT.c_str();
     }
 
-    // 4. Generate the font handle for the inline element
     return ElabFont(cHeight, cWeight, bItalic,
                     bUnderline, bStrikeOut,
                     iQuality, iPitchAndFamily, pszFaceName);

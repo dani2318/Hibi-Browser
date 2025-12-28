@@ -5,6 +5,7 @@
 
 #include <html/HTMLElement.hpp>
 #include <fonts/IFontProvider.hpp>
+#include <core/render/HIRender.hpp>
 
 class HTMLTextElement : public HTMLElement, public IFontProvider
 {
