@@ -4,8 +4,9 @@
 #include <vector>
 
 #include <html/HTMLElement.hpp>
+#include <fonts/IFontProvider.hpp>
 
-class HTMLTextElement : public HTMLElement
+class HTMLTextElement : public HTMLElement, public IFontProvider
 {
 public:
     HTMLTextElement(

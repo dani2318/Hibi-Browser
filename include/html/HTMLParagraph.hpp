@@ -5,8 +5,9 @@
 
 
 #include <html/HTMLTextElement.hpp> 
+#include <fonts/IFontProvider.hpp>
 
-class HTMLParagraph : public HTMLTextElement
+class HTMLParagraph : public HTMLTextElement, public IFontProvider
 {
 public:
     HTMLParagraph(

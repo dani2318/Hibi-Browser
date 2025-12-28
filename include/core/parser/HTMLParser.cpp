@@ -2,6 +2,8 @@
 #include <algorithm>
 #include <cctype>
 #include <html/HTMLElement.hpp>
+#include <html/HTMLParagraph.hpp>
+#include <html/HTMLHeaders.hpp>
 
 std::map<std::wstring, std::wstring> HTMLParser::parseAttributes(const std::wstring &attrStr)
 {
@@ -122,6 +124,48 @@ std::vector<std::shared_ptr<HTMLElement>> HTMLParser::parseHtmlToTree(const std:
                         if (!nodeStack.empty())
                         {
                             nodeStack.top()->children.push_back(std::make_shared<HTMLDiv>(pNode));
+
+                            bool isVoid = std::find(voidTags.begin(), voidTags.end(), tagName) != voidTags.end();
+
+                            if (!isSelfClosing && !isVoid && nodeStack.size() < 100)
+                                nodeStack.push(nodeStack.top()->children.back().get());
+                        }
+                    }
+                    else if (tagName == L"h1"){
+                        HTMLH1 pNode(tagName, attrs, std::vector<std::shared_ptr<HTMLElement>>());
+                        std::wcout << "Using HTMLDiv instead of HTMLElement"<< std::endl;
+
+                        if (!nodeStack.empty())
+                        {
+                            nodeStack.top()->children.push_back(std::make_shared<HTMLH1>(pNode));
+
+                            bool isVoid = std::find(voidTags.begin(), voidTags.end(), tagName) != voidTags.end();
+
+                            if (!isSelfClosing && !isVoid && nodeStack.size() < 100)
+                                nodeStack.push(nodeStack.top()->children.back().get());
+                        }
+                    }
+                    else if (tagName == L"h2"){
+                        HTMLH2 pNode(tagName, attrs, std::vector<std::shared_ptr<HTMLElement>>());
+                        std::wcout << "Using HTMLDiv instead of HTMLElement"<< std::endl;
+
+                        if (!nodeStack.empty())
+                        {
+                            nodeStack.top()->children.push_back(std::make_shared<HTMLH2>(pNode));
+
+                            bool isVoid = std::find(voidTags.begin(), voidTags.end(), tagName) != voidTags.end();
+
+                            if (!isSelfClosing && !isVoid && nodeStack.size() < 100)
+                                nodeStack.push(nodeStack.top()->children.back().get());
+                        }
+                    }
+                    else if (tagName == L"h3"){
+                        HTMLH3 pNode(tagName, attrs, std::vector<std::shared_ptr<HTMLElement>>());
+                        std::wcout << "Using HTMLDiv instead of HTMLElement"<< std::endl;
+
+                        if (!nodeStack.empty())
+                        {
+                            nodeStack.top()->children.push_back(std::make_shared<HTMLH3>(pNode));
 
                             bool isVoid = std::find(voidTags.begin(), voidTags.end(), tagName) != voidTags.end();
 
