@@ -4,5 +4,5 @@
 class IFontProvider {
 public:
     virtual ~IFontProvider() = default;
-    virtual HFONT Font() = 0; // Pure virtual
+    virtual HFONT Font() const = 0; // Pure virtual
 };

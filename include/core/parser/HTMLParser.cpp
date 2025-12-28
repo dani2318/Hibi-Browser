@@ -104,7 +104,7 @@ std::vector<std::shared_ptr<HTMLElement>> HTMLParser::parseHtmlToTree(const std:
                     if (tagName == L"p")
                     {
                         HTMLParagraph pNode(tagName, attrs, std::vector<std::shared_ptr<HTMLElement>>());
-                        std::wcout << "Using HTMLParagraph instead of HTMLElement"<< std::endl;
+                        std::wcout << "Using HTMLParagraph instead of HTMLElement" << std::endl;
 
                         if (!nodeStack.empty())
                         {
@@ -115,11 +115,11 @@ std::vector<std::shared_ptr<HTMLElement>> HTMLParser::parseHtmlToTree(const std:
                             if (!isSelfClosing && !isVoid && nodeStack.size() < 100)
                                 nodeStack.push(nodeStack.top()->children.back().get());
                         }
-
                     }
-                    else if (tagName == L"div"){
+                    else if (tagName == L"div")
+                    {
                         HTMLDiv pNode(tagName, attrs, std::vector<std::shared_ptr<HTMLElement>>());
-                        std::wcout << "Using HTMLDiv instead of HTMLElement"<< std::endl;
+                        std::wcout << "Using HTMLDiv instead of HTMLElement" << std::endl;
 
                         if (!nodeStack.empty())
                         {
@@ -131,9 +131,10 @@ std::vector<std::shared_ptr<HTMLElement>> HTMLParser::parseHtmlToTree(const std:
                                 nodeStack.push(nodeStack.top()->children.back().get());
                         }
                     }
-                    else if (tagName == L"h1"){
-                        HTMLH1 pNode(tagName, attrs, std::vector<std::shared_ptr<HTMLElement>>());
-                        std::wcout << "Using HTMLDiv instead of HTMLElement"<< std::endl;
+                    else if (tagName == L"h1")
+                    {
+                        HTMLH1 pNode(tagName, attrs, std::vector<std::shared_ptr<HTMLElement>>(), L"");
+                        std::wcout << "Using HTMLH1 instead of HTMLElement" << std::endl;
 
                         if (!nodeStack.empty())
                         {
@@ -145,9 +146,10 @@ std::vector<std::shared_ptr<HTMLElement>> HTMLParser::parseHtmlToTree(const std:
                                 nodeStack.push(nodeStack.top()->children.back().get());
                         }
                     }
-                    else if (tagName == L"h2"){
-                        HTMLH2 pNode(tagName, attrs, std::vector<std::shared_ptr<HTMLElement>>());
-                        std::wcout << "Using HTMLDiv instead of HTMLElement"<< std::endl;
+                    else if (tagName == L"h2")
+                    {
+                        HTMLH2 pNode(tagName, attrs, std::vector<std::shared_ptr<HTMLElement>>(), L"");
+                        std::wcout << "Using HTMLH2 instead of HTMLElement" << std::endl;
 
                         if (!nodeStack.empty())
                         {
@@ -159,9 +161,10 @@ std::vector<std::shared_ptr<HTMLElement>> HTMLParser::parseHtmlToTree(const std:
                                 nodeStack.push(nodeStack.top()->children.back().get());
                         }
                     }
-                    else if (tagName == L"h3"){
-                        HTMLH3 pNode(tagName, attrs, std::vector<std::shared_ptr<HTMLElement>>());
-                        std::wcout << "Using HTMLDiv instead of HTMLElement"<< std::endl;
+                    else if (tagName == L"h3")
+                    {
+                        HTMLH3 pNode(tagName, attrs, std::vector<std::shared_ptr<HTMLElement>>(), L"");
+                        std::wcout << "Using HTMLH3 instead of HTMLElement" << std::endl;
 
                         if (!nodeStack.empty())
                         {

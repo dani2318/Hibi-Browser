@@ -14,8 +14,9 @@ void SetupConsole(){
 
 int WINAPI wWinMain(HINSTANCE hInst, HINSTANCE hPrevInst, PWSTR pCmdLine, int nCmdShow) {
 
-    SetupConsole();
-
+    #ifdef _DEBUG
+        SetupConsole();
+    #endif
     std::wcout << "[DEBUG] Console Attached." << std::endl;
 
     std::wcout << "[DEBUG] Attempting fetch..." << std::endl;
