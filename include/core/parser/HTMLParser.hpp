@@ -1,20 +1,26 @@
-#pragma once 
+#pragma once
 #include <string>
 #include <map>
 #include <vector>
-#include <iostream>
+#include <stack>
+#include <regex>
+#include <memory>
+#include <css/CSSProperties.hpp>
 
+class HTMLElement;
 
-struct HTMLElement {
-    std::string tag;
-    std::map<std::string, std::string> attributes;
-    std::vector <HTMLElement> children;
-};
+class HTMLParser
+{
+public:
+    HTMLParser(std::wstring* html) : html_(html) {};
+    static std::map<std::wstring, std::wstring> parseAttributes(const std::wstring &attrStr);
+    static std::vector<std::shared_ptr<HTMLElement>> parseHtmlToTree(const std::wstring &html);
+    
+private:
+    std::wstring* html_;
 
-class HTMLParser {
-    public:
-        HTMLParser(const std::string &html) : html_(html), index_(0) {};
-    private:
-        const std::string& html_;
-        const int index_;
+    static void parseStyleTag(const std::wstring& cssContent, 
+                              std::map<std::wstring, CSSProperties>& styleRules);
+    static void applyCSSRules(std::shared_ptr<HTMLElement> element,
+                              const std::map<std::wstring, CSSProperties>& styleRules);
 };

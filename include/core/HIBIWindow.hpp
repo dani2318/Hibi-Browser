@@ -1,25 +1,57 @@
-#pragma once
+#ifndef HIBIWINDOW_HPP
+#define HIBIWINDOW_HPP
+
 #include <windows.h>
 #include <string>
+#include <vector>
+#include <map>
+#include <iostream>
+#include <core/parser/HTMLParser.hpp>
 
-struct WindowParams{
+struct WindowParams
+{
+    std::string title;
     int width;
     int height;
-    std::string title;
+    WindowParams(std::string t, int w, int h) : title(t), width(w), height(h) {
+
+    };
 };
 
-class HIBIWindow{
-    public:
-        HIBIWindow(WindowParams p, HINSTANCE hInst, HINSTANCE hPrevInst, PWSTR pCmdLine, int nCmdShow) ;
-        std::wstring pageContent;
-        void SetContent(const std::string& rawHtml);    
-        int run();
-    private:
-        WindowParams params;
-        HINSTANCE hInst;
-        HINSTANCE hPrevInst;
-        PWSTR pCmdLine;
-        int nCmdShow;
-        WNDCLASSEXW wcex;
-        HWND hwnd;
+class HIBIWindow
+{
+private:
+    WindowParams params;
+    HINSTANCE hInst;
+    HINSTANCE hPrevInst;
+    PWSTR pCmdLine;
+    int nCmdShow;
+    WNDCLASSEXW wcex;
+    HWND hwnd;
+    
+    std::wstring pageContent;
+    
+    HTMLParser* htmlParser;
+    
+    std::vector<std::shared_ptr<HTMLElement>> cachedElements;
+
+    void DrawTreeRecursive(HDC hdc, const std::vector<HTMLElement> &elements, 
+                          RECT rect, int &currentY);
+    void PaintWindow(HIBIWindow *pWindow, const std::vector<std::shared_ptr<HTMLElement>> &elements);
+
+public:
+    explicit HIBIWindow(WindowParams p, HINSTANCE hInst, HINSTANCE hPrevInst, 
+              PWSTR pCmdLine, int nCmdShow) ;
+    
+    ~HIBIWindow();
+    
+    HIBIWindow(const HIBIWindow&) = delete;
+    HIBIWindow& operator=(const HIBIWindow&) = delete;
+    
+    void SetContent(const std::string &rawHtml);
+    int run();
+    
+    friend LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 };
+
+#endif

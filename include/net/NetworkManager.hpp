@@ -6,11 +6,15 @@
 
 #pragma comment(lib, "winhttp.lib")
 
+LPCWSTR current_domain = L"";
+
 class NetworkManager
 {
 public:
     static std::string Fetch(LPCWSTR domain, LPCWSTR path)
     {
+        std::wcout << ">>> Navigating to: " << current_domain << "to: " << domain << path << std::endl;
+        current_domain = domain;
         std::string responseData;
         HINTERNET hSession = WinHttpOpen(L"HIBIBrowser/1.0", WINHTTP_ACCESS_TYPE_DEFAULT_PROXY, NULL, NULL, 0);
         HINTERNET hConnect = WinHttpConnect(hSession, domain, INTERNET_DEFAULT_HTTPS_PORT, 0);
